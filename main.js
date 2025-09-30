@@ -6,20 +6,22 @@ const fullscreenBtn = document.getElementById("fullscreen");
 const paper1 = document.querySelector("#p1");
 const paper2 = document.querySelector("#p2");
 const paper3 = document.querySelector("#p3");
+const paper4 = document.querySelector("#p4");
+const progress = document.getElementById("progress-bar");
+const prevBtn = document.getElementById("prev-btn");
+const nextBtn = document.getElementById("next-btn");
+
+const totalPages = 5; 
+let currentPage = 1;
 
 let currentLocation = 1;
 let scale = 1;
-const numOfPapers = 6;
+const numOfPapers = 5;
 const maxLocation = numOfPapers + 1;
-
-// detect mobile
 const isMobile = window.matchMedia("(max-width: 600px)").matches;
-
-// daftar semua kertas untuk mobile (p1, b1, p2, b2, p3, b3)
 const papersMobile = document.querySelectorAll(".paper");
 let currentIndexMobile = 0;
 
-// === Zoom & Fullscreen ===
 zoomInBtn.addEventListener("click", () => {
     scale += 0.1;
     book.style.transform = `scale(${scale})`;
@@ -37,8 +39,18 @@ fullscreenBtn.addEventListener("click", () => {
         document.exitFullscreen();
     }
 });
-
-// === Desktop Logic ===
+function updateNavButtons() {
+    if (currentPage === 1) {
+        prevBtn.style.display = "none";
+        nextBtn.style.display = "block"; 
+    } else if (currentPage === totalPages) {
+        prevBtn.style.display = "block"; 
+        nextBtn.style.display = "none";
+    } else {
+        prevBtn.style.display = "block";
+        nextBtn.style.display = "block";
+    }
+}
 function openBook() {
     book.style.transform = "translateX(50%)";
 }
@@ -51,15 +63,11 @@ function closeBook(isAtBeginning) {
     }
 }
 
-function updateBookShadow() {
-    book.classList.remove("shadow-1", "shadow-2", "shadow-3", "shadow-4", "shadow-5", "shadow-6");
-    let openPages = currentLocation - 1;
-    openPages = Math.min(openPages, 6);
-
-    if (openPages > 0) {
-        book.classList.add(`shadow-${openPages}`);
-    }
+function updateProgress() {
+    const percent = (currentPage / totalPages) * 100;
+    progress.style.width = percent + "%";
 }
+updateNavButtons();
 
 function goNextPage() {
     if(currentLocation < maxLocation) {
@@ -78,10 +86,18 @@ function goNextPage() {
                 paper3.style.zIndex = 3;
                 closeBook(false);
                 break;
+            case 4:
+                paper4.classList.add("flipped");
+                paper4.style.zIndex = 4;
+                closeBook(false);
+                break;
             default:
                 throw new Error("Unknown state");
         }
         currentLocation++;
+        if (currentPage < totalPages) currentPage++;
+        updateProgress();
+        updateNavButtons();
     }
 }
 
@@ -102,18 +118,26 @@ function goPrevPage() {
                 paper3.classList.remove("flipped");
                 paper3.style.zIndex = 1;
                 break;
+            case 5:
+                openBook();
+                paper4.classList.remove("flipped");
+                paper4.style.zIndex = 0;
+                break;
             default:
                 throw new Error("Unknown state");
         }
         currentLocation--;
+        if (currentPage > 1) currentPage--;
+        updateProgress();
+        updateNavButtons();
     }
 }
 
-// === Mobile Logic ===
 function goNextMobile() {
     if (currentIndexMobile < papersMobile.length) {
         papersMobile[currentIndexMobile].classList.add("flipped");
         currentIndexMobile++;
+        updateNavButtons();
     }
 }
 
@@ -121,10 +145,9 @@ function goPrevMobile() {
     if (currentIndexMobile > 0) {
         currentIndexMobile--;
         papersMobile[currentIndexMobile].classList.remove("flipped");
+        updateNavButtons();
     }
 }
-
-// === Detect click position (Desktop vs Mobile) ===
 book.addEventListener("click", (e) => {
     const rect = book.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
@@ -132,15 +155,16 @@ book.addEventListener("click", (e) => {
 
     if (isMobile) {
         if(clickX > width / 2) {
-            goNextMobile(); // klik kanan di mobile
+            goNextMobile();
         } else {
-            goPrevMobile(); // klik kiri di mobile
+            goPrevMobile();
         }
     } else {
         if(clickX > width / 2) {
-            goNextPage(); // klik kanan di desktop
+            goNextPage();
         } else {
-            goPrevPage(); // klik kiri di desktop
+            goPrevPage();
         }
     }
 });
+
